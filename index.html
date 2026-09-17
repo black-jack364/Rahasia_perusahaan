@@ -460,10 +460,20 @@
             }
 
             let html = '';
+            let prevKK = null; // Variabel untuk melacak KK sebelumnya
+
             pageData.forEach((warga, idx) => {
                 const absoluteIndex = startIndex + idx + 1;
+                
+                // Menentukan kelas border: Jika KK berbeda dari sebelumnya, gunakan garis hitam tebal
+                let borderClass = "border-t border-slate-200"; 
+                if (prevKK !== null && prevKK !== warga.kk) {
+                    borderClass = "border-t-2 border-black"; // Pemisah garis hitam antar kelompok KK
+                }
+                prevKK = warga.kk;
+
                 html += `
-                    <tr class="transition hover:bg-slate-50 border-t border-slate-200">
+                    <tr class="transition hover:bg-slate-50 ${borderClass}">
                         <td class="px-3 py-3 text-center font-bold text-slate-500">${absoluteIndex}</td>
                         <td class="px-3 py-3 font-mono text-xs font-bold text-indigo-950">${escapeHtml(warga.kk)}</td>
                         <td class="px-3 py-3 font-mono text-xs text-slate-600">${escapeHtml(warga.nik)}</td>
