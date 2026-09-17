@@ -460,15 +460,14 @@
             }
 
             let html = '';
-            let prevKK = null; // Variabel untuk melacak KK sebelumnya
+            let prevKK = null;
 
             pageData.forEach((warga, idx) => {
                 const absoluteIndex = startIndex + idx + 1;
                 
-                // Menentukan kelas border: Jika KK berbeda dari sebelumnya, gunakan garis hitam tebal
                 let borderClass = "border-t border-slate-200"; 
                 if (prevKK !== null && prevKK !== warga.kk) {
-                    borderClass = "border-t-2 border-black"; // Pemisah garis hitam antar kelompok KK
+                    borderClass = "border-t-2 border-black";
                 }
                 prevKK = warga.kk;
 
@@ -646,12 +645,32 @@
             
             doc.setFontSize(14);
             doc.text("DAFTAR PEMILIH & DATA WARGA", 20, 15);
+
+            // Mencari indeks baris yang merupakan baris pertama dari kelompok KK baru
+            const newGroupRowIndexes = [];
+            let lastKK = null;
+            filteredData.forEach((item, index) => {
+                if (lastKK !== null && item.kk !== lastKK) {
+                    newGroupRowIndexes.push(index);
+                }
+                lastKK = item.kk;
+            });
+
             doc.autoTable({
                 head: [["NO", "NO. KK", "NIK", "NAMA LENGKAP", "TEMPAT LAHIR", "TGL LAHIR", "UMUR", "JK", "RT", "TPS", "STATUS"]],
                 body: filteredData.map((item, idx) => [idx + 1, item.kk, item.nik, item.nama, item.tempatLahir, formatDateIndo(item.tanggalLahir), item.usia, item.jk, item.rt, item.tps, item.statusPemilih]),
                 startY: 25,
-                styles: { fontSize: 8 }
+                styles: { fontSize: 8 },
+                didDrawCell: function(data) {
+                    // Jika baris berada di kelompok KK baru dan merupakan sel isi tabel (body)
+                    if (data.section === 'body' && newGroupRowIndexes.includes(data.row.index)) {
+                        doc.setDrawColor(0, 0, 0); // Warna hitam
+                        doc.setLineWidth(0.5);     // Ketebalan garis pemisah
+                        doc.line(data.cell.x, data.cell.y, data.cell.x + data.cell.width, data.cell.y);
+                    }
+                }
             });
+
             doc.save(`data_warga_${new Date().toISOString().slice(0,10)}.pdf`);
             showToast('PDF berhasil diunduh!');
         }
