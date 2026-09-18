@@ -29,10 +29,11 @@
 </head>
 <body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex flex-col relative overflow-hidden">
 
-    <!-- Konfigurasi Google Apps Script Web App URL -->
+    <!-- Konfigurasi Google Apps Script Web App URL & Hash Password (SHA-256) -->
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbxogt1gBQ9Mi8_B7Y8zAbB37y_aPmcYjph4g9md_8Rqsf2RRna-FiXn2xzq-67brUU/exec"; 
-        const APP_PASSWORD = "040487";
+        // Enkripsi Hash SHA-256 dari password "040487" agar tidak terlihat di Inspect Element
+        const APP_PASSWORD_HASH = "96924f74d0e82c5fef986e3314819df99b1a206b0df44be7ca48d4db3250d180";
     </script>
 
     <!-- Modal Lock Screen / Gate Login -->
@@ -378,13 +379,26 @@
             }
         };
 
-        function handleLogin(event) {
+        async function hashPassword(str) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(str);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function handleLogin(event) {
             event.preventDefault();
             const input = document.getElementById('password-input');
             const errorMsg = document.getElementById('login-error');
             const loginCard = document.getElementById('login-card');
+            const enteredPassword = input ? input.value.trim() : '';
 
-            if (input.value === APP_PASSWORD) {
+            // Ubah password input menjadi hash SHA-256
+            const hashedInput = await hashPassword(enteredPassword);
+
+            // Bandingkan hash input dengan hash rahasia
+            if (hashedInput === APP_PASSWORD_HASH) {
                 sessionStorage.setItem('isLoggedIn', 'true');
                 if (errorMsg) errorMsg.classList.add('hidden');
                 unlockApplication();
@@ -396,8 +410,10 @@
                     void loginCard.offsetWidth; // Trigger reflow
                     loginCard.classList.add('animate-shake');
                 }
-                input.value = '';
-                input.focus();
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
             }
         }
 
